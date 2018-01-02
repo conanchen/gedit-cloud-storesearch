@@ -1,4 +1,4 @@
-package com.github.conanchen.gedit.hello.grpc;
+package com.github.conanchen.gedit.storesearch.grpc;
 
 import com.google.gson.Gson;
 import io.grpc.*;

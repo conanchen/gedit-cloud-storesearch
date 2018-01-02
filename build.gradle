@@ -1,9 +1,11 @@
 buildscript {
     ext {
         springBootVersion = '1.5.8.RELEASE'
-        gradleDockerVersion   = "0.17.2"
+        gradleDockerVersion = "0.17.2"
         GRPC_VERSION = '1.8.0'
         GRPC_STARTER_VERSION = '2.1.4'
+        elasticsearch_version = '6.1.1'
+        fastjson_version = '1.2.44'
     }
     repositories {
         mavenCentral()
@@ -25,7 +27,7 @@ sourceCompatibility = 1.8
 
 // This is used as the docker image prefix (org)
 group = 'conanchen'
-version =  '0.0.1-SNAPSHOT'
+version = '0.0.1-SNAPSHOT'
 
 jar {
     baseName = 'gedit-cloud-hello'
@@ -79,4 +81,9 @@ dependencies {
         exclude group: 'org.slf4j', module: 'log4j-over-slf4j'
     }
     testCompile('org.springframework.boot:spring-boot-starter-test')
+
+    compile("com.alibaba:fastjson:${fastjson_version}")
+    compile("org.elasticsearch:elasticsearch:${elasticsearch_version}")
+    compile("org.elasticsearch.client:elasticsearch-rest-high-level-client:${elasticsearch_version}")
+
 }
