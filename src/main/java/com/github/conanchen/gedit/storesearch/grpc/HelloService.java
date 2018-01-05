@@ -20,13 +20,13 @@ public class HelloService extends HelloGrpc.HelloImplBase {
     @Override
     public void sayHello(HelloRequest request, StreamObserver<HelloReply> responseObserver) {
         final HelloReply.Builder replyBuilder = HelloReply.newBuilder()
-                .setId(System.currentTimeMillis())
+                .setUuid(System.currentTimeMillis())
                 .setMessage(String.format("Hello %s@%s ", request.getName(), dateFormat.format(System.currentTimeMillis())))
                 .setCreated(System.currentTimeMillis())
                 .setLastUpdated(System.currentTimeMillis());
         HelloReply helloReply = replyBuilder.build();
         responseObserver.onNext(helloReply);
-        log.info(String.format("HelloService.sayHello() %d:%s gson=%s", helloReply.getId(), helloReply.getMessage(), gson.toJson(helloReply)));
+        log.info(String.format("HelloService.sayHello() %d:%s gson=%s", helloReply.getUuid(), helloReply.getMessage(), gson.toJson(helloReply)));
         responseObserver.onCompleted();
     }
 }
