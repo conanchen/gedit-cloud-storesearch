@@ -4,7 +4,7 @@ public interface StoreIndex {
     String INDEX = "STORES";
     String TYPE = "STORE";
 
-    String FIELD_ID = "id";
+    String FIELD_UUID = "uuid";
     String FIELD_NAME = "name";
     String FIELD_LOGO = "logo";
     String FIELD_LAT = "lat";
