@@ -88,12 +88,12 @@ public class SearchService extends StoreSearchApiGrpc.StoreSearchApiImplBase {
                 log.info("async delete request,uuid[{}],index[{}],type[{}],version[{}]",id,index,type,version);
                 ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
                 if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
-
+                    log.info("shard delete fail ,shard total[{}],actually success[{}]",shardInfo.getTotal(),shardInfo.getSuccessful());
                 }
                 if (shardInfo.getFailed() > 0) {
                     for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
                         String reason = failure.reason();
-                        log.info("shard fail :[{}]",reason);
+                        log.info("shard delete fail reason :[{}]",reason);
                     }
                 }
 
@@ -147,8 +147,8 @@ public class SearchService extends StoreSearchApiGrpc.StoreSearchApiImplBase {
         Map<String, Object> sourceAsMap = hit.getSourceAsMap();
         String name = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_NAME, "NO_NAMAE");
         String logo = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_LOGO, "NO_LOGO");
-        Long lat = (Long) sourceAsMap.getOrDefault(StoreIndex.FIELD_LAT, 0l);
-        Long lon = (Long) sourceAsMap.getOrDefault(StoreIndex.FIELD_LON, 0l);
+        Long lat = (Long) sourceAsMap.getOrDefault(StoreIndex.FIELD_LAT, 0L);
+        Long lon = (Long) sourceAsMap.getOrDefault(StoreIndex.FIELD_LON, 0L);
         String type = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_TYPE, "FOOD");
         String desc = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_DESC, "NO_DESC");
         Integer bonusRate = (Integer) sourceAsMap.getOrDefault(StoreIndex.FIELD_BONUSRATE, 0);
