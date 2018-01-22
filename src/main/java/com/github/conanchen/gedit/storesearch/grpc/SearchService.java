@@ -1,8 +1,12 @@
 package com.github.conanchen.gedit.storesearch.grpc;
 
+import com.github.conanchen.gedit.common.grpc.Location;
+import com.github.conanchen.gedit.common.grpc.Status;
+import com.github.conanchen.gedit.store.search.grpc.*;
 import com.github.conanchen.gedit.storesearch.StoreIndex;
 import com.google.gson.Gson;
 import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
@@ -11,57 +15,47 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.search.SearchHit;
 import org.lognet.springboot.grpc.GRpcService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Map;
 
+import static io.grpc.Status.Code.OK;
+@Slf4j
 @GRpcService(interceptors = {LogInterceptor.class})
-public class SearchService extends StoresearchGrpc.StoresearchImplBase {
+public class SearchService extends StoreSearchApiGrpc.StoreSearchApiImplBase {
 
     @Autowired
     private RestHighLevelClient restHighLevelClient;
-
-
-    private static final Logger log = LoggerFactory.getLogger(SearchService.class);
     private static final Gson gson = new Gson();
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     @Override
-    public void index(IndexRequest request, StreamObserver<IndexResponse> responseObserver) {
+    public void index(IndexStoreRequest request, StreamObserver<IndexStoreResponse> responseObserver) {
         try {
             XContentBuilder builder = XContentFactory
                     .jsonBuilder()
                     .startObject()
                     .field(StoreIndex.FIELD_NAME, request.getName())
-                    .field(StoreIndex.FIELD_LAT, request.getLat())
-                    .field(StoreIndex.FIELD_LON, request.getLon())
+                    .field(StoreIndex.FIELD_LAT, request.getLocation().getLat())
+                    .field(StoreIndex.FIELD_LON, request.getLocation().getLon())
                     .field(StoreIndex.FIELD_TYPE, request.getType())
                     .field(StoreIndex.FIELD_DESC, request.getDesc())
                     .field(StoreIndex.FIELD_BONUSRATE, request.getBonusRate())
                     .endObject();
-            //    string id = 1; //store id
-            //    string name = 2;
-            //    string logo = 3;
-            //    int64 lat = 4;
-            //    int64 lon = 5;
-            //    string type = 6;
-            //    string desc = 7;
-            //    int32 bonusRate = 8;
 
             org.elasticsearch.action.index.IndexRequest indexRequest =
                     new org.elasticsearch.action.index.
-                            IndexRequest(StoreIndex.INDEX, StoreIndex.TYPE, request.getId())
+                            IndexRequest(StoreIndex.INDEX, StoreIndex.TYPE, request.getUuid())
                             .source(builder);
             restHighLevelClient.indexAsync(indexRequest, new ActionListener<org.elasticsearch.action.index.IndexResponse>() {
                 @Override
                 public void onResponse(org.elasticsearch.action.index.IndexResponse indexResponse) {
-                    IndexResponse result = IndexResponse.newBuilder()
-                            .setId(indexResponse.getId())
-                            .setStatus(String.format("%s", indexResponse.status().name()))
+                    IndexStoreResponse result = IndexStoreResponse.newBuilder()
+                            .setUuid(indexResponse.getId())
+                            .setStatus(Status.newBuilder()
+                                    .setCode(String.valueOf(OK.value()))
+                                    .setDetails("success")
+                                    .build())
                             .build();
                     responseObserver.onNext(result);
                     responseObserver.onCompleted();
@@ -78,11 +72,11 @@ public class SearchService extends StoresearchGrpc.StoresearchImplBase {
     }
 
     @Override
-    public void delete(DeleteRequest request, StreamObserver<DeleteResponse> responseObserver) {
+    public void delete(DeleteStoreRequest request, StreamObserver<DeleteStoreResponse> responseObserver) {
         org.elasticsearch.action.delete.DeleteRequest deleteRequest = new org.elasticsearch.action.delete.DeleteRequest(
                 StoreIndex.INDEX,
                 StoreIndex.TYPE,
-                request.getId());
+                request.getUuid());
 
         restHighLevelClient.deleteAsync(deleteRequest, new ActionListener<org.elasticsearch.action.delete.DeleteResponse>() {
             @Override
@@ -91,6 +85,7 @@ public class SearchService extends StoresearchGrpc.StoresearchImplBase {
                 String type = deleteResponse.getType();
                 String id = deleteResponse.getId();
                 long version = deleteResponse.getVersion();
+                log.info("async delete request,uuid[{}],index[{}],type[{}],version[{}]",id,index,type,version);
                 ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
                 if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
 
@@ -98,13 +93,17 @@ public class SearchService extends StoresearchGrpc.StoresearchImplBase {
                 if (shardInfo.getFailed() > 0) {
                     for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
                         String reason = failure.reason();
+                        log.info("shard fail :[{}]",reason);
                     }
                 }
 
-                DeleteResponse result = DeleteResponse
+                DeleteStoreResponse result = DeleteStoreResponse
                         .newBuilder()
-                        .setId(id)
-                        .setStatus(String.format("%s", deleteResponse.status().name()))
+                        .setUuid(id)
+                        .setStatus(Status.newBuilder()
+                                .setCode(String.valueOf(OK.value()))
+                                .setDetails("success")
+                                .build())
                         .build();
                 responseObserver.onNext(result);
                 responseObserver.onCompleted();
@@ -118,7 +117,7 @@ public class SearchService extends StoresearchGrpc.StoresearchImplBase {
     }
 
     @Override
-    public void search(SearchRequest request, StreamObserver<StoreResponse> responseObserver) {
+    public void search(SearchStoreRequest request, StreamObserver<SearchStoreResponse> responseObserver) {
         org.elasticsearch.action.search.SearchRequest searchRequest = new org.elasticsearch.action.search
                 .SearchRequest(StoreIndex.INDEX)
                 .types(StoreIndex.TYPE);
@@ -129,8 +128,8 @@ public class SearchService extends StoresearchGrpc.StoresearchImplBase {
                 for (int i = 0; i < searchHits.length; i++) {
                     SearchHit hit = searchHits[i];
                     String sourceAsString = hit.getSourceAsString();
-                    System.out.println(String.format("hit: %s", sourceAsString));
-                    StoreResponse storeResponse = buildStoreResponse(request.getFrom() + i, hit);
+                    log.info(String.format("hit: %s", sourceAsString));
+                    SearchStoreResponse storeResponse = buildStoreResponse(request.getFrom() + i, hit);
                     responseObserver.onNext(storeResponse);
                 }
                 responseObserver.onCompleted();
@@ -144,7 +143,7 @@ public class SearchService extends StoresearchGrpc.StoresearchImplBase {
 
     }
 
-    private StoreResponse buildStoreResponse(int from, SearchHit hit) {
+    private SearchStoreResponse buildStoreResponse(int from, SearchHit hit) {
         Map<String, Object> sourceAsMap = hit.getSourceAsMap();
         String name = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_NAME, "NO_NAMAE");
         String logo = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_LOGO, "NO_LOGO");
@@ -153,13 +152,12 @@ public class SearchService extends StoresearchGrpc.StoresearchImplBase {
         String type = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_TYPE, "FOOD");
         String desc = (String) sourceAsMap.getOrDefault(StoreIndex.FIELD_DESC, "NO_DESC");
         Integer bonusRate = (Integer) sourceAsMap.getOrDefault(StoreIndex.FIELD_BONUSRATE, 0);
-        StoreResponse storeResponse = StoreResponse
+        SearchStoreResponse storeResponse = SearchStoreResponse
                 .newBuilder()
-                .setId(hit.getId())
+                .setUuid(hit.getId())
                 .setName(name)
                 .setLogo(logo)
-                .setLat(lat)
-                .setLon(lon)
+                .setLocation(Location.newBuilder().setLat(lat).setLon(lon).build())
                 .setType(type)
                 .setDesc(desc)
                 .setBonusRate(bonusRate)
