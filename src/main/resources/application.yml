@@ -1,0 +1,19 @@
+org:
+  springframework:
+    boot:
+      autoconfigure:
+        EnableAutoConfiguration: org.ditto.easyhan.config.SpringConfig
+
+gedit:
+  docker:
+    enabled: false
+    cloud:
+      config:
+        server:
+          git:
+            uri:
+            clone-on-start: true
+grpc:
+    port: 9985
+server:
+  port: 9090
