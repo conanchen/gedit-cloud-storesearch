@@ -21,7 +21,7 @@
     - $ docker run -p 18088:8088 -p 18980:8980 gedit-cloud-storesearch
 2. [https://docs.docker.com/get-started/part2/#share-your-image] 
 3. Pull and run the image from the remote repository
-	- $ docker run -p 18088:8088 -p 18980:8980 conanchen/gedit-cloud-hello:latest
+	- $ docker run -p 18088:8088 -p 18980:8980 conanchen/gedit-cloud-storesearch:latest
 
 
 - skip test
