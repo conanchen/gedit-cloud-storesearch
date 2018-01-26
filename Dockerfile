@@ -18,5 +18,5 @@ ENV SPRING_APPLICATION_JSON='\
         }\
     }\
 }'
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","-Xmx512m","/app.jar"]
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-Dspring.profiles.active=test","-jar","-Xmx512m","/app.jar"]
 EXPOSE 9090 9985
