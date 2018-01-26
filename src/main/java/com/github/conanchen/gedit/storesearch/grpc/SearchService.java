@@ -15,8 +15,6 @@ import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -74,7 +72,7 @@ public class SearchService extends StoreSearchApiGrpc.StoreSearchApiImplBase {
                 public void onResponse(org.elasticsearch.action.index.IndexResponse indexResponse) {
                     IndexStoreResponse result = IndexStoreResponse.newBuilder()
                             .setUuid(indexResponse.getId())
-                            .setStatus(Status.newBuilder().setCode("OK").setDetails("index ok...").build())
+                            .setStatus(Status.newBuilder().setCode(Status.Code.OK).setDetails("index ok...").build())
                             .build();
                     responseObserver.onNext(result);
                     responseObserver.onCompleted();
@@ -117,7 +115,7 @@ public class SearchService extends StoreSearchApiGrpc.StoreSearchApiImplBase {
                 DeleteStoreResponse result = DeleteStoreResponse
                         .newBuilder()
                         .setUuid(id)
-                        .setStatus(Status.newBuilder().setCode("OK").setDetails(String.format("%s", deleteResponse.status().name())).build())
+                        .setStatus(Status.newBuilder().setCode(Status.Code.OK).setDetails(String.format("%s", deleteResponse.status().name())).build())
                         .build();
                 responseObserver.onNext(result);
                 responseObserver.onCompleted();
@@ -135,7 +133,7 @@ public class SearchService extends StoreSearchApiGrpc.StoreSearchApiImplBase {
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 
         sourceBuilder.query(QueryBuilders.geoDistanceQuery(StoreIndex.FIELD_geoPoint)
-                .point(request.getLat(), request.getLon())
+                .point(request.getLocation().getLat(), request.getLocation().getLon())
                 .distance(100, DistanceUnit.KILOMETERS))
                 .from(0)
                 .size(20)
