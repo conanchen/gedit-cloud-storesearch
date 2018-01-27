@@ -5,6 +5,7 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -15,7 +16,8 @@ import javax.annotation.PreDestroy;
 
 @SpringBootApplication
 public class CloudStoresearchApplication {
-
+    @Value("es.host")
+    private String hostname;
     public static void main(String[] args) {
         SpringApplication.run(CloudStoresearchApplication.class, args);
     }
@@ -29,7 +31,7 @@ public class CloudStoresearchApplication {
     public RestHighLevelClient restHighLevelClient() {
         return new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost("localhost", 9200, "http")
+                        new HttpHost(hostname, 9200, "http")
                 ));
 
     }
